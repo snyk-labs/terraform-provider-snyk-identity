@@ -48,7 +48,7 @@ func (c *Client) ListGroupSSOConnections(groupID string) ([]SSOConnectionItem, e
 	if err != nil {
 		return nil, fmt.Errorf("request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -81,16 +81,16 @@ func (c *Client) ListGroupSSOConnectionUsers(groupID, ssoID string) ([]SSOConnec
 
 		if resp.StatusCode != http.StatusOK {
 			body, _ := io.ReadAll(resp.Body)
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			return nil, fmt.Errorf("list group SSO connection users: status %d: %s", resp.StatusCode, string(body))
 		}
 
 		var out ListGroupSSOConnectionUsersResponse
 		if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			return nil, fmt.Errorf("decode response: %w", err)
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 
 		all = append(all, out.Data...)
 		if out.Links == nil || out.Links.Next == "" {

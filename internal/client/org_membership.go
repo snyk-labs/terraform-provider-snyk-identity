@@ -95,7 +95,7 @@ func (c *Client) CreateOrgMembership(orgID, userID, roleID string) (membershipID
 	if err != nil {
 		return "", fmt.Errorf("request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	respBody, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode != http.StatusCreated {
@@ -129,16 +129,16 @@ func (c *Client) ListOrgMemberships(orgID string) ([]ListOrgMembershipItem, erro
 
 		if resp.StatusCode != http.StatusOK {
 			body, _ := io.ReadAll(resp.Body)
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			return nil, fmt.Errorf("list org memberships: status %d: %s", resp.StatusCode, string(body))
 		}
 
 		var out ListOrgMembershipsResponse
 		if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			return nil, fmt.Errorf("decode response: %w", err)
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 
 		all = append(all, out.Data...)
 		if out.Links == nil || out.Links.Next == "" {
@@ -166,16 +166,16 @@ func (c *Client) GetOrgMembershipByID(orgID, membershipID string) (*ListOrgMembe
 
 		if resp.StatusCode != http.StatusOK {
 			body, _ := io.ReadAll(resp.Body)
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			return nil, fmt.Errorf("list org memberships: status %d: %s", resp.StatusCode, string(body))
 		}
 
 		var out ListOrgMembershipsResponse
 		if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			return nil, fmt.Errorf("decode response: %w", err)
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 
 		for i := range out.Data {
 			if out.Data[i].ID == membershipID {
@@ -204,7 +204,7 @@ func (c *Client) DeleteOrgMembership(orgID, membershipID string) error {
 	if err != nil {
 		return fmt.Errorf("request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -242,7 +242,7 @@ func (c *Client) UpdateOrgMembership(orgID, membershipID, roleID string) error {
 	if err != nil {
 		return fmt.Errorf("request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	respBody, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
