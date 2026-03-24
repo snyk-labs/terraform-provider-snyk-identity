@@ -96,7 +96,7 @@ func (c *Client) GetGroup(groupID string) (*GetGroupData, error) {
 	if err != nil {
 		return nil, fmt.Errorf("request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -143,7 +143,7 @@ func (c *Client) CreateGroupMembership(groupID, userID, roleID string) (membersh
 	if err != nil {
 		return "", fmt.Errorf("request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	respBody, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode == http.StatusConflict {
@@ -190,16 +190,16 @@ func (c *Client) ListGroupMemberships(groupID string) ([]ListGroupMembershipItem
 
 		if resp.StatusCode != http.StatusOK {
 			body, _ := io.ReadAll(resp.Body)
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			return nil, fmt.Errorf("list group memberships: status %d: %s", resp.StatusCode, string(body))
 		}
 
 		var out ListGroupMembershipsResponse
 		if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			return nil, fmt.Errorf("decode response: %w", err)
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 
 		all = append(all, out.Data...)
 		if out.Links == nil || out.Links.Next == "" {
@@ -227,16 +227,16 @@ func (c *Client) GetGroupMembershipByID(groupID, membershipID string) (*ListGrou
 
 		if resp.StatusCode != http.StatusOK {
 			body, _ := io.ReadAll(resp.Body)
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			return nil, fmt.Errorf("list group memberships: status %d: %s", resp.StatusCode, string(body))
 		}
 
 		var out ListGroupMembershipsResponse
 		if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			return nil, fmt.Errorf("decode response: %w", err)
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 
 		for i := range out.Data {
 			if out.Data[i].ID == membershipID {
@@ -273,16 +273,16 @@ func (c *Client) getGroupMembershipIDOfUser(groupID, userID string) (string, err
 
 		if resp.StatusCode != http.StatusOK {
 			body, _ := io.ReadAll(resp.Body)
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			return "", fmt.Errorf("list group memberships: status %d: %s", resp.StatusCode, string(body))
 		}
 
 		var out ListGroupMembershipsResponse
 		if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			return "", fmt.Errorf("decode response: %w", err)
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 
 		if len(out.Data) > 0 {
 			return out.Data[0].ID, nil
@@ -323,7 +323,7 @@ func (c *Client) UpdateGroupMembership(groupID, membershipID, roleID string) err
 	if err != nil {
 		return fmt.Errorf("request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	respBody, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
@@ -351,7 +351,7 @@ func (c *Client) DeleteGroupMembership(groupID, membershipID string, cascade boo
 	if err != nil {
 		return fmt.Errorf("request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)

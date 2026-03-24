@@ -14,7 +14,7 @@ func TestNew(t *testing.T) {
 	if p == nil {
 		t.Fatal("nil provider")
 	}
-	var _ tfprovider.Provider = p
+	var _ = p
 }
 
 func TestSnykIdentityProvider_Metadata(t *testing.T) {

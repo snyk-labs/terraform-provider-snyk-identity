@@ -40,16 +40,16 @@ func (c *Client) ListGroupOrgs(groupID string) ([]OrgItem, error) {
 
 		if resp.StatusCode != http.StatusOK {
 			body, _ := io.ReadAll(resp.Body)
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			return nil, fmt.Errorf("list group orgs: status %d: %s", resp.StatusCode, string(body))
 		}
 
 		var out ListGroupOrgsResponse
 		if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			return nil, fmt.Errorf("decode response: %w", err)
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 
 		all = append(all, out.Data...)
 		if out.Links == nil || out.Links.Next == "" {
