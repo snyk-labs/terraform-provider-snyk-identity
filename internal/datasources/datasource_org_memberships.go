@@ -3,6 +3,8 @@ package datasources
 import (
 	"context"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
+
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -101,8 +103,15 @@ func (d *OrgMembershipsDataSource) Read(ctx context.Context, req datasource.Read
 	}
 
 	orgID := config.OrgID.ValueString()
-	items, err := d.api.ListOrgMemberships(orgID)
+	tflog.Debug(ctx, "Listing org memberships", map[string]any{
+		"org_id": orgID,
+	})
+	items, err := d.api.ListOrgMemberships(ctx, orgID)
 	if err != nil {
+		tflog.Error(ctx, "List org memberships failed", map[string]any{
+			"org_id": orgID,
+			"error":  err.Error(),
+		})
 		resp.Diagnostics.AddError("list org memberships failed", err.Error())
 		return
 	}
@@ -122,5 +131,9 @@ func (d *OrgMembershipsDataSource) Read(ctx context.Context, req datasource.Read
 		ID:          types.StringValue(orgID),
 		Memberships: refs,
 	}
+	tflog.Debug(ctx, "Listed org memberships", map[string]any{
+		"org_id": orgID,
+		"count":  len(refs),
+	})
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }

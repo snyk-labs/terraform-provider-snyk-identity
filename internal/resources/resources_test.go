@@ -1,7 +1,6 @@
 package resources_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -13,12 +12,12 @@ func TestOrgMembershipResource_metadataAndSchema(t *testing.T) {
 	t.Parallel()
 	r := resources.NewOrgMembershipResource()
 	var meta resource.MetadataResponse
-	r.Metadata(context.Background(), resource.MetadataRequest{ProviderTypeName: "snyk"}, &meta)
+	r.Metadata(t.Context(), resource.MetadataRequest{ProviderTypeName: "snyk"}, &meta)
 	if meta.TypeName != "snyk_org_membership" {
 		t.Errorf("TypeName = %q", meta.TypeName)
 	}
 	var schemaResp resource.SchemaResponse
-	r.Schema(context.Background(), resource.SchemaRequest{}, &schemaResp)
+	r.Schema(t.Context(), resource.SchemaRequest{}, &schemaResp)
 	if schemaResp.Schema.Attributes == nil {
 		t.Fatal("nil schema")
 	}
@@ -28,12 +27,12 @@ func TestGroupMembershipResource_metadataAndSchema(t *testing.T) {
 	t.Parallel()
 	r := resources.NewGroupMembershipResource()
 	var meta resource.MetadataResponse
-	r.Metadata(context.Background(), resource.MetadataRequest{ProviderTypeName: "snyk"}, &meta)
+	r.Metadata(t.Context(), resource.MetadataRequest{ProviderTypeName: "snyk"}, &meta)
 	if meta.TypeName != "snyk_group_membership" {
 		t.Errorf("TypeName = %q", meta.TypeName)
 	}
 	var schemaResp resource.SchemaResponse
-	r.Schema(context.Background(), resource.SchemaRequest{}, &schemaResp)
+	r.Schema(t.Context(), resource.SchemaRequest{}, &schemaResp)
 	if schemaResp.Schema.Attributes == nil {
 		t.Fatal("nil schema")
 	}
@@ -47,7 +46,7 @@ func TestOrgMembershipResource_Configure_client(t *testing.T) {
 		t.Fatal(err)
 	}
 	var resp resource.ConfigureResponse
-	r.Configure(context.Background(), resource.ConfigureRequest{ProviderData: c}, &resp)
+	r.Configure(t.Context(), resource.ConfigureRequest{ProviderData: c}, &resp)
 	if resp.Diagnostics.HasError() {
 		t.Fatal(resp.Diagnostics)
 	}
@@ -57,7 +56,7 @@ func TestOrgMembershipResource_Configure_invalid(t *testing.T) {
 	t.Parallel()
 	r := resources.NewOrgMembershipResource().(*resources.OrgMembershipResource)
 	var resp resource.ConfigureResponse
-	r.Configure(context.Background(), resource.ConfigureRequest{ProviderData: "not-a-client"}, &resp)
+	r.Configure(t.Context(), resource.ConfigureRequest{ProviderData: "not-a-client"}, &resp)
 	if !resp.Diagnostics.HasError() {
 		t.Fatal("expected diagnostics")
 	}
@@ -67,7 +66,7 @@ func TestGroupMembershipResource_Configure_invalid(t *testing.T) {
 	t.Parallel()
 	r := resources.NewGroupMembershipResource().(*resources.GroupMembershipResource)
 	var resp resource.ConfigureResponse
-	r.Configure(context.Background(), resource.ConfigureRequest{ProviderData: 42}, &resp)
+	r.Configure(t.Context(), resource.ConfigureRequest{ProviderData: 42}, &resp)
 	if !resp.Diagnostics.HasError() {
 		t.Fatal("expected diagnostics")
 	}

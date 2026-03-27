@@ -3,6 +3,8 @@ package datasources
 import (
 	"context"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
+
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -97,8 +99,15 @@ func (d *RolesDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 	}
 
 	groupID := config.GroupID.ValueString()
-	roles, err := d.api.ListGroupRolesV1(groupID)
+	tflog.Debug(ctx, "Listing roles for group", map[string]any{
+		"group_id": groupID,
+	})
+	roles, err := d.api.ListGroupRolesV1(ctx, groupID)
 	if err != nil {
+		tflog.Error(ctx, "List group roles failed", map[string]any{
+			"group_id": groupID,
+			"error":    err.Error(),
+		})
 		resp.Diagnostics.AddError("list group roles failed", err.Error())
 		return
 	}
@@ -117,5 +126,9 @@ func (d *RolesDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 		ID:      types.StringValue(groupID),
 		Roles:   roleRefs,
 	}
+	tflog.Debug(ctx, "Listed roles for group", map[string]any{
+		"group_id": groupID,
+		"count":    len(roleRefs),
+	})
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }

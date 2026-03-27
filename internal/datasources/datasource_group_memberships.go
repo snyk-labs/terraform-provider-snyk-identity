@@ -3,6 +3,8 @@ package datasources
 import (
 	"context"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
+
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -101,8 +103,15 @@ func (d *GroupMembershipsDataSource) Read(ctx context.Context, req datasource.Re
 	}
 
 	groupID := config.GroupID.ValueString()
-	items, err := d.api.ListGroupMemberships(groupID)
+	tflog.Debug(ctx, "Listing group memberships", map[string]any{
+		"group_id": groupID,
+	})
+	items, err := d.api.ListGroupMemberships(ctx, groupID)
 	if err != nil {
+		tflog.Error(ctx, "List group memberships failed", map[string]any{
+			"group_id": groupID,
+			"error":    err.Error(),
+		})
 		resp.Diagnostics.AddError("list group memberships failed", err.Error())
 		return
 	}
@@ -122,5 +131,9 @@ func (d *GroupMembershipsDataSource) Read(ctx context.Context, req datasource.Re
 		ID:          types.StringValue(groupID),
 		Memberships: refs,
 	}
+	tflog.Debug(ctx, "Listed group memberships", map[string]any{
+		"group_id": groupID,
+		"count":    len(refs),
+	})
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }

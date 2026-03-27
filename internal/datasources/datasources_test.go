@@ -1,7 +1,6 @@
 package datasources_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -53,12 +52,12 @@ func TestGroupMembershipsDataSource(t *testing.T) {
 func assertDataSource(t *testing.T, ds datasource.DataSource, providerTypeName, wantType string) {
 	t.Helper()
 	var meta datasource.MetadataResponse
-	ds.Metadata(context.Background(), datasource.MetadataRequest{ProviderTypeName: providerTypeName}, &meta)
+	ds.Metadata(t.Context(), datasource.MetadataRequest{ProviderTypeName: providerTypeName}, &meta)
 	if meta.TypeName != wantType {
 		t.Errorf("TypeName = %q, want %q", meta.TypeName, wantType)
 	}
 	var schemaResp datasource.SchemaResponse
-	ds.Schema(context.Background(), datasource.SchemaRequest{}, &schemaResp)
+	ds.Schema(t.Context(), datasource.SchemaRequest{}, &schemaResp)
 	if schemaResp.Schema.Attributes == nil {
 		t.Error("nil schema attributes")
 	}

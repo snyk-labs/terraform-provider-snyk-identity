@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -17,9 +18,9 @@ type RoleItem struct {
 
 // ListGroupRolesV1 calls GET /v1/group/{group_id}/roles (v1 API; no paging, single response).
 // this only gets all the org roles, not the group roles
-func (c *Client) ListGroupRolesV1(groupID string) ([]RoleItem, error) {
+func (c *Client) ListGroupRolesV1(ctx context.Context, groupID string) ([]RoleItem, error) {
 	url := fmt.Sprintf("%s/v1/group/%s/roles", c.baseURL, groupID)
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("new request: %w", err)
 	}

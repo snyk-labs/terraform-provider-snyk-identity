@@ -9,10 +9,10 @@ import (
 func TestParseOrgMembershipImportID(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		id       string
-		wantOrg  string
-		wantMem  string
-		wantOK   bool
+		id      string
+		wantOrg string
+		wantMem string
+		wantOK  bool
 	}{
 		{"org-1/mem-2", "org-1", "mem-2", true},
 		{"a/b/c", "a", "b/c", true},

@@ -3,6 +3,8 @@ package datasources
 import (
 	"context"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
+
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -92,8 +94,15 @@ func (d *SSOConnectionsDataSource) Read(ctx context.Context, req datasource.Read
 	}
 
 	groupID := config.GroupID.ValueString()
-	connections, err := d.api.ListGroupSSOConnections(groupID)
+	tflog.Debug(ctx, "Listing SSO connections for group", map[string]any{
+		"group_id": groupID,
+	})
+	connections, err := d.api.ListGroupSSOConnections(ctx, groupID)
 	if err != nil {
+		tflog.Error(ctx, "List SSO connections failed", map[string]any{
+			"group_id": groupID,
+			"error":    err.Error(),
+		})
 		resp.Diagnostics.AddError("list SSO connections failed", err.Error())
 		return
 	}
@@ -111,5 +120,9 @@ func (d *SSOConnectionsDataSource) Read(ctx context.Context, req datasource.Read
 		ID:          types.StringValue(groupID),
 		Connections: connectionRefs,
 	}
+	tflog.Debug(ctx, "Listed SSO connections for group", map[string]any{
+		"group_id": groupID,
+		"count":    len(connectionRefs),
+	})
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }

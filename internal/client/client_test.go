@@ -47,7 +47,7 @@ func TestCreateOrgMembership(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	id, err := c.CreateOrgMembership("org-1", "user-1", "role-1")
+	id, err := c.CreateOrgMembership(t.Context(), "org-1", "user-1", "role-1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,7 +65,7 @@ func TestCreateOrgMembership_errorStatus(t *testing.T) {
 	defer ts.Close()
 
 	c, _ := client.New("tok", ts.URL)
-	_, err := c.CreateOrgMembership("o", "u", "r")
+	_, err := c.CreateOrgMembership(t.Context(), "o", "u", "r")
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -83,7 +83,7 @@ func TestGetOrgMembershipByID_firstPage(t *testing.T) {
 	defer ts.Close()
 
 	c, _ := client.New("tok", ts.URL)
-	m, err := c.GetOrgMembershipByID("org-1", "m1")
+	m, err := c.GetOrgMembershipByID(t.Context(), "org-1", "m1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -108,7 +108,7 @@ func TestGetOrgMembershipByID_secondPage(t *testing.T) {
 	defer ts.Close()
 
 	c, _ := client.New("tok", ts.URL)
-	m, err := c.GetOrgMembershipByID("org-1", "m2")
+	m, err := c.GetOrgMembershipByID(t.Context(), "org-1", "m2")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -128,7 +128,7 @@ func TestGetOrgMembershipByID_notFound(t *testing.T) {
 	defer ts.Close()
 
 	c, _ := client.New("tok", ts.URL)
-	m, err := c.GetOrgMembershipByID("org-1", "missing")
+	m, err := c.GetOrgMembershipByID(t.Context(), "org-1", "missing")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -154,7 +154,7 @@ func TestListOrgMemberships_paging(t *testing.T) {
 	defer ts.Close()
 
 	c, _ := client.New("tok", ts.URL)
-	all, err := c.ListOrgMemberships("o1")
+	all, err := c.ListOrgMemberships(t.Context(), "o1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -174,7 +174,7 @@ func TestDeleteOrgMembership(t *testing.T) {
 	defer ts.Close()
 
 	c, _ := client.New("tok", ts.URL)
-	if err := c.DeleteOrgMembership("o", "m"); err != nil {
+	if err := c.DeleteOrgMembership(t.Context(), "o", "m"); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -190,7 +190,7 @@ func TestUpdateOrgMembership(t *testing.T) {
 	defer ts.Close()
 
 	c, _ := client.New("tok", ts.URL)
-	if err := c.UpdateOrgMembership("o", "m", "r"); err != nil {
+	if err := c.UpdateOrgMembership(t.Context(), "o", "m", "r"); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -203,7 +203,7 @@ func TestGetGroup(t *testing.T) {
 	defer ts.Close()
 
 	c, _ := client.New("tok", ts.URL)
-	g, err := c.GetGroup("g1")
+	g, err := c.GetGroup(t.Context(), "g1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -221,7 +221,7 @@ func TestCreateGroupMembership_created(t *testing.T) {
 	defer ts.Close()
 
 	c, _ := client.New("tok", ts.URL)
-	id, err := c.CreateGroupMembership("g1", "u1", "r1")
+	id, err := c.CreateGroupMembership(t.Context(), "g1", "u1", "r1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -253,7 +253,7 @@ func TestCreateGroupMembership_conflictThenUpdate(t *testing.T) {
 	defer ts.Close()
 
 	c, _ := client.New("tok", ts.URL)
-	id, err := c.CreateGroupMembership("g1", "u1", "r1")
+	id, err := c.CreateGroupMembership(t.Context(), "g1", "u1", "r1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -274,7 +274,7 @@ func TestGetGroupMembershipByID(t *testing.T) {
 	defer ts.Close()
 
 	c, _ := client.New("tok", ts.URL)
-	m, err := c.GetGroupMembershipByID("g", "gm")
+	m, err := c.GetGroupMembershipByID(t.Context(), "g", "gm")
 	if err != nil || m == nil || m.ID != "gm" {
 		t.Fatalf("err=%v m=%+v", err, m)
 	}
@@ -297,7 +297,7 @@ func TestListGroupMemberships_paging(t *testing.T) {
 	defer ts.Close()
 
 	c, _ := client.New("tok", ts.URL)
-	all, err := c.ListGroupMemberships("g")
+	all, err := c.ListGroupMemberships(t.Context(), "g")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -319,7 +319,7 @@ func TestDeleteGroupMembership_cascadeQuery(t *testing.T) {
 	defer ts.Close()
 
 	c, _ := client.New("tok", ts.URL)
-	if err := c.DeleteGroupMembership("g", "m", true); err != nil {
+	if err := c.DeleteGroupMembership(t.Context(), "g", "m", true); err != nil {
 		t.Fatal(err)
 	}
 	if !sawCascade {
@@ -335,7 +335,7 @@ func TestListGroupSSOConnections(t *testing.T) {
 	defer ts.Close()
 
 	c, _ := client.New("tok", ts.URL)
-	list, err := c.ListGroupSSOConnections("g")
+	list, err := c.ListGroupSSOConnections(t.Context(), "g")
 	if err != nil || len(list) != 1 || list[0].ID != "s1" {
 		t.Fatalf("err=%v list=%+v", err, list)
 	}
@@ -357,7 +357,7 @@ func TestListGroupSSOConnectionUsers_paging(t *testing.T) {
 	defer ts.Close()
 
 	c, _ := client.New("tok", ts.URL)
-	all, err := c.ListGroupSSOConnectionUsers("g", "s")
+	all, err := c.ListGroupSSOConnectionUsers(t.Context(), "g", "s")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -385,7 +385,7 @@ func TestListGroupOrgs_paging(t *testing.T) {
 	defer ts.Close()
 
 	c, _ := client.New("tok", ts.URL)
-	all, err := c.ListGroupOrgs("g")
+	all, err := c.ListGroupOrgs(t.Context(), "g")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -405,7 +405,7 @@ func TestListGroupRolesV1(t *testing.T) {
 	defer ts.Close()
 
 	c, _ := client.New("tok", ts.URL)
-	roles, err := c.ListGroupRolesV1("g")
+	roles, err := c.ListGroupRolesV1(t.Context(), "g")
 	if err != nil || len(roles) != 1 || roles[0].PublicID != "rid" {
 		t.Fatalf("err=%v %+v", err, roles)
 	}

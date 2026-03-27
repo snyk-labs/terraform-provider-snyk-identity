@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
+
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
@@ -98,16 +100,28 @@ func (r *GroupMembershipResource) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
+	tflog.Debug(ctx, "Creating group membership", map[string]any{
+		"group_id": plan.GroupID.ValueString(),
+		"user_id":  plan.UserID.ValueString(),
+	})
 	membershipID, err := r.api.CreateGroupMembership(
+		ctx,
 		plan.GroupID.ValueString(),
 		plan.UserID.ValueString(),
 		plan.RoleID.ValueString(),
 	)
 	if err != nil {
+		tflog.Error(ctx, "Create group membership failed", map[string]any{
+			"error": err.Error(),
+		})
 		resp.Diagnostics.AddError("create group membership failed", err.Error())
 		return
 	}
 
+	tflog.Debug(ctx, "Created group membership", map[string]any{
+		"group_id":      plan.GroupID.ValueString(),
+		"membership_id": membershipID,
+	})
 	plan.ID = types.StringValue(membershipID)
 	cascade := false
 	if !plan.CascadeDelete.IsNull() {
@@ -124,6 +138,10 @@ func (r *GroupMembershipResource) Read(ctx context.Context, req resource.ReadReq
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	tflog.Debug(ctx, "Reading group membership (no remote refresh)", map[string]any{
+		"group_id":      state.GroupID.ValueString(),
+		"membership_id": state.ID.ValueString(),
+	})
 	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
 }
 
@@ -134,8 +152,15 @@ func (r *GroupMembershipResource) Update(ctx context.Context, req resource.Updat
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	tflog.Debug(ctx, "Updating group membership role", map[string]any{
+		"group_id":      plan.GroupID.ValueString(),
+		"membership_id": plan.ID.ValueString(),
+	})
 	// role_id can be updated in place via PATCH; cascade_delete is state-only; group_id and user_id still require replace.
-	if err := r.api.UpdateGroupMembership(plan.GroupID.ValueString(), plan.ID.ValueString(), plan.RoleID.ValueString()); err != nil {
+	if err := r.api.UpdateGroupMembership(ctx, plan.GroupID.ValueString(), plan.ID.ValueString(), plan.RoleID.ValueString()); err != nil {
+		tflog.Error(ctx, "Update group membership failed", map[string]any{
+			"error": err.Error(),
+		})
 		resp.Diagnostics.AddError("update group membership failed", err.Error())
 		return
 	}
@@ -151,7 +176,15 @@ func (r *GroupMembershipResource) Delete(ctx context.Context, req resource.Delet
 	}
 
 	cascade := state.CascadeDelete.ValueBool()
-	if err := r.api.DeleteGroupMembership(state.GroupID.ValueString(), state.ID.ValueString(), cascade); err != nil {
+	tflog.Debug(ctx, "Deleting group membership", map[string]any{
+		"group_id":       state.GroupID.ValueString(),
+		"membership_id":  state.ID.ValueString(),
+		"cascade_delete": cascade,
+	})
+	if err := r.api.DeleteGroupMembership(ctx, state.GroupID.ValueString(), state.ID.ValueString(), cascade); err != nil {
+		tflog.Error(ctx, "Delete group membership failed", map[string]any{
+			"error": err.Error(),
+		})
 		resp.Diagnostics.AddError("delete group membership failed", err.Error())
 		return
 	}
@@ -164,8 +197,15 @@ func (r *GroupMembershipResource) ImportState(ctx context.Context, req resource.
 		return
 	}
 
-	m, err := r.api.GetGroupMembershipByID(groupID, membershipID)
+	tflog.Debug(ctx, "Importing group membership", map[string]any{
+		"group_id":      groupID,
+		"membership_id": membershipID,
+	})
+	m, err := r.api.GetGroupMembershipByID(ctx, groupID, membershipID)
 	if err != nil {
+		tflog.Error(ctx, "Import group membership read failed", map[string]any{
+			"error": err.Error(),
+		})
 		resp.Diagnostics.AddError("read membership for import", err.Error())
 		return
 	}

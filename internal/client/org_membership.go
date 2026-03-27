@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -66,7 +67,7 @@ type UpdateOrgMembershipRels struct {
 
 // CreateOrgMembership calls POST /rest/orgs/{org_id}/memberships.
 // See https://docs.snyk.io/snyk-api/reference/orgs#post-orgs-org_id-memberships
-func (c *Client) CreateOrgMembership(orgID, userID, roleID string) (membershipID string, err error) {
+func (c *Client) CreateOrgMembership(ctx context.Context, orgID, userID, roleID string) (membershipID string, err error) {
 	url := fmt.Sprintf("%s/rest/orgs/%s/memberships?version=%s", c.baseURL, orgID, apiVersion)
 
 	body := CreateOrgMembershipRequest{
@@ -84,7 +85,7 @@ func (c *Client) CreateOrgMembership(orgID, userID, roleID string) (membershipID
 		return "", fmt.Errorf("marshal request: %w", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(raw))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(raw))
 	if err != nil {
 		return "", fmt.Errorf("new request: %w", err)
 	}
@@ -111,11 +112,11 @@ func (c *Client) CreateOrgMembership(orgID, userID, roleID string) (membershipID
 
 // ListOrgMemberships calls GET /rest/orgs/{org_id}/memberships with paging (limit=100 per page) and returns all memberships.
 // See https://docs.snyk.io/snyk-api/reference/orgs#get-orgs-org_id-memberships
-func (c *Client) ListOrgMemberships(orgID string) ([]ListOrgMembershipItem, error) {
+func (c *Client) ListOrgMemberships(ctx context.Context, orgID string) ([]ListOrgMembershipItem, error) {
 	reqURL := fmt.Sprintf("%s/rest/orgs/%s/memberships?version=%s&limit=100", c.baseURL, orgID, apiVersion)
 	var all []ListOrgMembershipItem
 	for {
-		req, err := http.NewRequest(http.MethodGet, reqURL, nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
 		if err != nil {
 			return nil, fmt.Errorf("new request: %w", err)
 		}
@@ -149,10 +150,10 @@ func (c *Client) ListOrgMemberships(orgID string) ([]ListOrgMembershipItem, erro
 }
 
 // GetOrgMembershipByID lists memberships with paging and returns the one with the given ID, or nil.
-func (c *Client) GetOrgMembershipByID(orgID, membershipID string) (*ListOrgMembershipItem, error) {
+func (c *Client) GetOrgMembershipByID(ctx context.Context, orgID, membershipID string) (*ListOrgMembershipItem, error) {
 	url := fmt.Sprintf("%s/rest/orgs/%s/memberships?version=%s&limit=100", c.baseURL, orgID, apiVersion)
 	for {
-		req, err := http.NewRequest(http.MethodGet, url, nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 		if err != nil {
 			return nil, fmt.Errorf("new request: %w", err)
 		}
@@ -190,10 +191,10 @@ func (c *Client) GetOrgMembershipByID(orgID, membershipID string) (*ListOrgMembe
 }
 
 // DeleteOrgMembership calls DELETE /rest/orgs/{org_id}/memberships/{membership_id}.
-func (c *Client) DeleteOrgMembership(orgID, membershipID string) error {
+func (c *Client) DeleteOrgMembership(ctx context.Context, orgID, membershipID string) error {
 	url := fmt.Sprintf("%s/rest/orgs/%s/memberships/%s?version=%s", c.baseURL, orgID, membershipID, apiVersion)
 
-	req, err := http.NewRequest(http.MethodDelete, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
 	if err != nil {
 		return fmt.Errorf("new request: %w", err)
 	}
@@ -214,7 +215,7 @@ func (c *Client) DeleteOrgMembership(orgID, membershipID string) error {
 }
 
 // UpdateOrgMembership calls PATCH /rest/orgs/{org_id}/memberships/{membership_id} to update the membership (e.g. role_id).
-func (c *Client) UpdateOrgMembership(orgID, membershipID, roleID string) error {
+func (c *Client) UpdateOrgMembership(ctx context.Context, orgID, membershipID, roleID string) error {
 	url := fmt.Sprintf("%s/rest/orgs/%s/memberships/%s?version=%s", c.baseURL, orgID, membershipID, apiVersion)
 
 	body := UpdateOrgMembershipRequest{
@@ -231,7 +232,7 @@ func (c *Client) UpdateOrgMembership(orgID, membershipID, roleID string) error {
 		return fmt.Errorf("marshal request: %w", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPatch, url, bytes.NewReader(raw))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, url, bytes.NewReader(raw))
 	if err != nil {
 		return fmt.Errorf("new request: %w", err)
 	}
