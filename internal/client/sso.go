@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -35,9 +36,9 @@ type SSOConnectionUserItem struct {
 }
 
 // ListGroupSSOConnections calls GET /rest/groups/{group_id}/sso_connections.
-func (c *Client) ListGroupSSOConnections(groupID string) ([]SSOConnectionItem, error) {
+func (c *Client) ListGroupSSOConnections(ctx context.Context, groupID string) ([]SSOConnectionItem, error) {
 	url := fmt.Sprintf("%s/rest/groups/%s/sso_connections?version=%s", c.baseURL, groupID, apiVersion)
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("new request: %w", err)
 	}
@@ -63,11 +64,11 @@ func (c *Client) ListGroupSSOConnections(groupID string) ([]SSOConnectionItem, e
 }
 
 // ListGroupSSOConnectionUsers calls GET /rest/groups/{group_id}/sso_connections/{sso_id}/users with paging (limit=100 per page).
-func (c *Client) ListGroupSSOConnectionUsers(groupID, ssoID string) ([]SSOConnectionUserItem, error) {
+func (c *Client) ListGroupSSOConnectionUsers(ctx context.Context, groupID, ssoID string) ([]SSOConnectionUserItem, error) {
 	url := fmt.Sprintf("%s/rest/groups/%s/sso_connections/%s/users?version=%s&limit=100", c.baseURL, groupID, ssoID, apiVersion)
 	var all []SSOConnectionUserItem
 	for {
-		req, err := http.NewRequest(http.MethodGet, url, nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 		if err != nil {
 			return nil, fmt.Errorf("new request: %w", err)
 		}

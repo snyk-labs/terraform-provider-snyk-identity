@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -22,11 +23,11 @@ type OrgItem struct {
 }
 
 // ListGroupOrgs calls GET /rest/groups/{group_id}/orgs with paging (limit=100 per page).
-func (c *Client) ListGroupOrgs(groupID string) ([]OrgItem, error) {
+func (c *Client) ListGroupOrgs(ctx context.Context, groupID string) ([]OrgItem, error) {
 	url := fmt.Sprintf("%s/rest/groups/%s/orgs?version=%s&limit=100", c.baseURL, groupID, apiVersion)
 	var all []OrgItem
 	for {
-		req, err := http.NewRequest(http.MethodGet, url, nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 		if err != nil {
 			return nil, fmt.Errorf("new request: %w", err)
 		}

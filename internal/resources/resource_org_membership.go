@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
+
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -87,16 +89,28 @@ func (r *OrgMembershipResource) Create(ctx context.Context, req resource.CreateR
 		return
 	}
 
+	tflog.Debug(ctx, "Creating org membership", map[string]any{
+		"org_id":  plan.OrgID.ValueString(),
+		"user_id": plan.UserID.ValueString(),
+	})
 	membershipID, err := r.api.CreateOrgMembership(
+		ctx,
 		plan.OrgID.ValueString(),
 		plan.UserID.ValueString(),
 		plan.RoleID.ValueString(),
 	)
 	if err != nil {
+		tflog.Error(ctx, "Create org membership failed", map[string]any{
+			"error": err.Error(),
+		})
 		resp.Diagnostics.AddError("create org membership failed", err.Error())
 		return
 	}
 
+	tflog.Debug(ctx, "Created org membership", map[string]any{
+		"org_id":        plan.OrgID.ValueString(),
+		"membership_id": membershipID,
+	})
 	plan.ID = types.StringValue(membershipID)
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 }
@@ -109,6 +123,10 @@ func (r *OrgMembershipResource) Read(ctx context.Context, req resource.ReadReque
 		return
 	}
 
+	tflog.Debug(ctx, "Reading org membership (no remote refresh)", map[string]any{
+		"org_id":        state.OrgID.ValueString(),
+		"membership_id": state.ID.ValueString(),
+	})
 	// The Snyk REST API does not expose GET /orgs/{org_id}/memberships/{membership_id};
 	// we only have list. We keep the state as-is and assume membership still exists.
 	// If the user deleted it out-of-band, the next apply would fail on update or
@@ -124,8 +142,15 @@ func (r *OrgMembershipResource) Update(ctx context.Context, req resource.UpdateR
 		return
 	}
 
+	tflog.Debug(ctx, "Updating org membership role", map[string]any{
+		"org_id":        plan.OrgID.ValueString(),
+		"membership_id": plan.ID.ValueString(),
+	})
 	// Only role_id can be updated in place via PATCH; org_id and user_id still require replace.
-	if err := r.api.UpdateOrgMembership(plan.OrgID.ValueString(), plan.ID.ValueString(), plan.RoleID.ValueString()); err != nil {
+	if err := r.api.UpdateOrgMembership(ctx, plan.OrgID.ValueString(), plan.ID.ValueString(), plan.RoleID.ValueString()); err != nil {
+		tflog.Error(ctx, "Update org membership failed", map[string]any{
+			"error": err.Error(),
+		})
 		resp.Diagnostics.AddError("update org membership failed", err.Error())
 		return
 	}
@@ -140,7 +165,14 @@ func (r *OrgMembershipResource) Delete(ctx context.Context, req resource.DeleteR
 		return
 	}
 
-	if err := r.api.DeleteOrgMembership(state.OrgID.ValueString(), state.ID.ValueString()); err != nil {
+	tflog.Debug(ctx, "Deleting org membership", map[string]any{
+		"org_id":        state.OrgID.ValueString(),
+		"membership_id": state.ID.ValueString(),
+	})
+	if err := r.api.DeleteOrgMembership(ctx, state.OrgID.ValueString(), state.ID.ValueString()); err != nil {
+		tflog.Error(ctx, "Delete org membership failed", map[string]any{
+			"error": err.Error(),
+		})
 		resp.Diagnostics.AddError("delete org membership failed", err.Error())
 		return
 	}
@@ -154,8 +186,15 @@ func (r *OrgMembershipResource) ImportState(ctx context.Context, req resource.Im
 		return
 	}
 
-	m, err := r.api.GetOrgMembershipByID(orgID, membershipID)
+	tflog.Debug(ctx, "Importing org membership", map[string]any{
+		"org_id":        orgID,
+		"membership_id": membershipID,
+	})
+	m, err := r.api.GetOrgMembershipByID(ctx, orgID, membershipID)
 	if err != nil {
+		tflog.Error(ctx, "Import org membership read failed", map[string]any{
+			"error": err.Error(),
+		})
 		resp.Diagnostics.AddError("read membership for import", err.Error())
 		return
 	}

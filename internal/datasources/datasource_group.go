@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
+
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -85,8 +87,15 @@ func (d *GroupDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 	}
 
 	groupID := config.GroupID.ValueString()
-	group, err := d.api.GetGroup(groupID)
+	tflog.Debug(ctx, "Reading group", map[string]any{
+		"group_id": groupID,
+	})
+	group, err := d.api.GetGroup(ctx, groupID)
 	if err != nil {
+		tflog.Error(ctx, "Get group failed", map[string]any{
+			"group_id": groupID,
+			"error":    err.Error(),
+		})
 		resp.Diagnostics.AddError("get group failed", err.Error())
 		return
 	}
@@ -98,11 +107,14 @@ func (d *GroupDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 		Name:    types.StringValue(groupAttrString(group.Attributes, "name")),
 		Slug:    types.StringValue(groupAttrString(group.Attributes, "slug")),
 	}
+	tflog.Debug(ctx, "Read group", map[string]any{
+		"group_id": group.ID,
+	})
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 // groupAttrString returns the string value for key from a JSON:API attributes map, or "" if missing.
-func groupAttrString(attrs map[string]interface{}, key string) string {
+func groupAttrString(attrs map[string]any, key string) string {
 	if attrs == nil {
 		return ""
 	}

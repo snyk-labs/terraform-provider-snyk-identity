@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
+
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
@@ -82,13 +84,22 @@ func (p *SnykIdentityProvider) Configure(ctx context.Context, req provider.Confi
 		endpoint = config.APIEndpoint.ValueString()
 	}
 	baseURL := deriveAPIBaseURL(endpoint)
+	tflog.Debug(ctx, "Creating Snyk API client", map[string]any{
+		"api_base_url": baseURL,
+	})
 
 	c, err := client.New(config.APIToken.ValueString(), baseURL)
 	if err != nil {
+		tflog.Error(ctx, "Snyk API client creation failed", map[string]any{
+			"error": err.Error(),
+		})
 		resp.Diagnostics.AddError("client creation failed", err.Error())
 		return
 	}
 
+	tflog.Info(ctx, "Configured Snyk API client", map[string]any{
+		"api_base_url": baseURL,
+	})
 	resp.ResourceData = c
 	resp.DataSourceData = c
 }

@@ -1,7 +1,6 @@
 package provider_test
 
 import (
-	"context"
 	"testing"
 
 	tfprovider "github.com/hashicorp/terraform-plugin-framework/provider"
@@ -21,7 +20,7 @@ func TestSnykIdentityProvider_Metadata(t *testing.T) {
 	t.Parallel()
 	p := snykprovider.New()
 	var resp tfprovider.MetadataResponse
-	p.Metadata(context.Background(), tfprovider.MetadataRequest{}, &resp)
+	p.Metadata(t.Context(), tfprovider.MetadataRequest{}, &resp)
 	if resp.TypeName != "snyk" {
 		t.Errorf("TypeName = %q", resp.TypeName)
 	}
@@ -31,7 +30,7 @@ func TestSnykIdentityProvider_Schema(t *testing.T) {
 	t.Parallel()
 	p := snykprovider.New()
 	var resp tfprovider.SchemaResponse
-	p.Schema(context.Background(), tfprovider.SchemaRequest{}, &resp)
+	p.Schema(t.Context(), tfprovider.SchemaRequest{}, &resp)
 	if resp.Schema.Attributes == nil {
 		t.Fatal("nil schema attributes")
 	}
@@ -46,7 +45,7 @@ func TestSnykIdentityProvider_Schema(t *testing.T) {
 func TestSnykIdentityProvider_Resources(t *testing.T) {
 	t.Parallel()
 	p := snykprovider.New()
-	fns := p.Resources(context.Background())
+	fns := p.Resources(t.Context())
 	if len(fns) != 2 {
 		t.Fatalf("len(Resources) = %d", len(fns))
 	}
@@ -63,7 +62,7 @@ func TestSnykIdentityProvider_Resources(t *testing.T) {
 func TestSnykIdentityProvider_DataSources(t *testing.T) {
 	t.Parallel()
 	p := snykprovider.New()
-	fns := p.DataSources(context.Background())
+	fns := p.DataSources(t.Context())
 	if len(fns) != 7 {
 		t.Fatalf("len(DataSources) = %d", len(fns))
 	}

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
+
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -119,8 +121,17 @@ func (d *SSOConnectionUsersDataSource) Read(ctx context.Context, req datasource.
 
 	groupID := config.GroupID.ValueString()
 	ssoID := config.SSOID.ValueString()
-	users, err := d.api.ListGroupSSOConnectionUsers(groupID, ssoID)
+	tflog.Debug(ctx, "Listing SSO connection users", map[string]any{
+		"group_id": groupID,
+		"sso_id":   ssoID,
+	})
+	users, err := d.api.ListGroupSSOConnectionUsers(ctx, groupID, ssoID)
 	if err != nil {
+		tflog.Error(ctx, "List SSO connection users failed", map[string]any{
+			"group_id": groupID,
+			"sso_id":   ssoID,
+			"error":    err.Error(),
+		})
 		resp.Diagnostics.AddError("list SSO connection users failed", err.Error())
 		return
 	}
@@ -144,11 +155,16 @@ func (d *SSOConnectionUsersDataSource) Read(ctx context.Context, req datasource.
 		ID:      types.StringValue(id),
 		Users:   userRefs,
 	}
+	tflog.Debug(ctx, "Listed SSO connection users", map[string]any{
+		"group_id": groupID,
+		"sso_id":   ssoID,
+		"count":    len(userRefs),
+	})
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 // attrString returns the string value for key from a JSON:API attributes map, or "" if missing.
-func attrString(attrs map[string]interface{}, key string) string {
+func attrString(attrs map[string]any, key string) string {
 	if attrs == nil {
 		return ""
 	}
@@ -163,7 +179,7 @@ func attrString(attrs map[string]interface{}, key string) string {
 }
 
 // attrBool returns the bool value for key from a JSON:API attributes map, or false if missing.
-func attrBool(attrs map[string]interface{}, key string) bool {
+func attrBool(attrs map[string]any, key string) bool {
 	if attrs == nil {
 		return false
 	}

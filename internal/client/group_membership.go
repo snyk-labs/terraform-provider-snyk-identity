@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -83,9 +84,9 @@ type UpdateGroupMembershipRels struct {
 }
 
 // GetGroup calls GET /rest/groups/{group_id} and returns the group details.
-func (c *Client) GetGroup(groupID string) (*GetGroupData, error) {
+func (c *Client) GetGroup(ctx context.Context, groupID string) (*GetGroupData, error) {
 	url := fmt.Sprintf("%s/rest/groups/%s?version=%s", c.baseURL, groupID, apiVersion)
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("new request: %w", err)
 	}
@@ -114,7 +115,7 @@ func (c *Client) GetGroup(groupID string) (*GetGroupData, error) {
 // See https://docs.snyk.io/snyk-api/reference/groups#post-groups-group_id-memberships
 // If the API returns 409 Conflict (e.g. a default membership already exists), the client updates that
 // membership instead of creating a new one.
-func (c *Client) CreateGroupMembership(groupID, userID, roleID string) (membershipID string, err error) {
+func (c *Client) CreateGroupMembership(ctx context.Context, groupID, userID, roleID string) (membershipID string, err error) {
 	url := fmt.Sprintf("%s/rest/groups/%s/memberships?version=%s", c.baseURL, groupID, apiVersion)
 
 	body := CreateGroupMembershipRequest{
@@ -132,7 +133,7 @@ func (c *Client) CreateGroupMembership(groupID, userID, roleID string) (membersh
 		return "", fmt.Errorf("marshal request: %w", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(raw))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(raw))
 	if err != nil {
 		return "", fmt.Errorf("new request: %w", err)
 	}
@@ -147,14 +148,14 @@ func (c *Client) CreateGroupMembership(groupID, userID, roleID string) (membersh
 
 	respBody, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode == http.StatusConflict {
-		existingID, err := c.getGroupMembershipIDOfUser(groupID, userID)
+		existingID, err := c.getGroupMembershipIDOfUser(ctx, groupID, userID)
 		if err != nil {
 			return "", fmt.Errorf("get group membership of user error: %w", err)
 		}
 		if existingID == "" {
 			return "", fmt.Errorf("create group membership: status 409: could not resolve existing membership: %s", string(respBody))
 		}
-		if err := c.UpdateGroupMembership(groupID, existingID, roleID); err != nil {
+		if err := c.UpdateGroupMembership(ctx, groupID, existingID, roleID); err != nil {
 			return "", fmt.Errorf("update group membership error: %w", err)
 		}
 		return existingID, nil
@@ -172,11 +173,11 @@ func (c *Client) CreateGroupMembership(groupID, userID, roleID string) (membersh
 
 // ListGroupMemberships calls GET /rest/groups/{group_id}/memberships with paging (limit=100 per page) and returns all memberships.
 // See https://docs.snyk.io/snyk-api/reference/groups#get-groups-group_id-memberships
-func (c *Client) ListGroupMemberships(groupID string) ([]ListGroupMembershipItem, error) {
+func (c *Client) ListGroupMemberships(ctx context.Context, groupID string) ([]ListGroupMembershipItem, error) {
 	reqURL := fmt.Sprintf("%s/rest/groups/%s/memberships?version=%s&limit=100", c.baseURL, groupID, apiVersion)
 	var all []ListGroupMembershipItem
 	for {
-		req, err := http.NewRequest(http.MethodGet, reqURL, nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
 		if err != nil {
 			return nil, fmt.Errorf("new request: %w", err)
 		}
@@ -210,10 +211,10 @@ func (c *Client) ListGroupMemberships(groupID string) ([]ListGroupMembershipItem
 }
 
 // GetGroupMembershipByID lists group memberships with paging and returns the one with the given ID, or nil.
-func (c *Client) GetGroupMembershipByID(groupID, membershipID string) (*ListGroupMembershipItem, error) {
+func (c *Client) GetGroupMembershipByID(ctx context.Context, groupID, membershipID string) (*ListGroupMembershipItem, error) {
 	url := fmt.Sprintf("%s/rest/groups/%s/memberships?version=%s&limit=100", c.baseURL, groupID, apiVersion)
 	for {
-		req, err := http.NewRequest(http.MethodGet, url, nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 		if err != nil {
 			return nil, fmt.Errorf("new request: %w", err)
 		}
@@ -252,14 +253,14 @@ func (c *Client) GetGroupMembershipByID(groupID, membershipID string) (*ListGrou
 
 // getGroupMembershipIDOfUser returns the group_membership id for userID in groupID, or "" if not listed.
 // Uses GET /groups/{group_id}/memberships with the user_id query parameter.
-func (c *Client) getGroupMembershipIDOfUser(groupID, userID string) (string, error) {
+func (c *Client) getGroupMembershipIDOfUser(ctx context.Context, groupID, userID string) (string, error) {
 	q := url.Values{}
 	q.Set("version", apiVersion)
 	q.Set("user_id", userID)
 	q.Set("limit", "10")
 	reqURL := fmt.Sprintf("%s/rest/groups/%s/memberships?%s", c.baseURL, groupID, q.Encode())
 	for {
-		req, err := http.NewRequest(http.MethodGet, reqURL, nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
 		if err != nil {
 			return "", fmt.Errorf("new request: %w", err)
 		}
@@ -295,7 +296,7 @@ func (c *Client) getGroupMembershipIDOfUser(groupID, userID string) (string, err
 }
 
 // UpdateGroupMembership calls PATCH /rest/groups/{group_id}/memberships/{membership_id} to update the membership (e.g. role_id).
-func (c *Client) UpdateGroupMembership(groupID, membershipID, roleID string) error {
+func (c *Client) UpdateGroupMembership(ctx context.Context, groupID, membershipID, roleID string) error {
 	url := fmt.Sprintf("%s/rest/groups/%s/memberships/%s?version=%s", c.baseURL, groupID, membershipID, apiVersion)
 
 	body := UpdateGroupMembershipRequest{
@@ -312,7 +313,7 @@ func (c *Client) UpdateGroupMembership(groupID, membershipID, roleID string) err
 		return fmt.Errorf("marshal request: %w", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPatch, url, bytes.NewReader(raw))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, url, bytes.NewReader(raw))
 	if err != nil {
 		return fmt.Errorf("new request: %w", err)
 	}
@@ -334,13 +335,13 @@ func (c *Client) UpdateGroupMembership(groupID, membershipID, roleID string) err
 
 // DeleteGroupMembership calls DELETE /rest/groups/{group_id}/memberships/{membership_id}.
 // cascade: if true, also deletes child org memberships of the group membership.
-func (c *Client) DeleteGroupMembership(groupID, membershipID string, cascade bool) error {
+func (c *Client) DeleteGroupMembership(ctx context.Context, groupID, membershipID string, cascade bool) error {
 	url := fmt.Sprintf("%s/rest/groups/%s/memberships/%s?version=%s", c.baseURL, groupID, membershipID, apiVersion)
 	if cascade {
 		url += "&cascade=true"
 	}
 
-	req, err := http.NewRequest(http.MethodDelete, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
 	if err != nil {
 		return fmt.Errorf("new request: %w", err)
 	}
