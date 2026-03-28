@@ -28,32 +28,32 @@ variable "user_id" {
   description = "User UUID to add as org and/or group member"
 }
 
-# --- Shared data: discover orgs and roles in the group (use outputs to pick IDs for resources below) ---
+# Shared data: discover orgs and roles in the group (use outputs to pick IDs for resources)
 
-data "snyk_orgs" "in_group" {
+data "snyk_orgs" "orgs_in_group" {
   group_id = var.group_id
 }
 
-data "snyk_roles" "in_group" {
+data "snyk_roles" "org_roles_in_group" {
   group_id = var.group_id
 }
 
 output "orgs_in_group" {
-  value       = data.snyk_orgs.in_group.orgs
+  value       = data.snyk_orgs.orgs_in_group.orgs
   description = "Organizations in the group; use an org id for snyk_org_membership (see org_membership.tf)"
 }
 
-output "roles_in_group" {
-  value       = data.snyk_roles.in_group.roles
-  description = "Roles from the group roles API; use public_id for org_role_id / group_role_id"
-}
-
 output "org_ids_in_group" {
-  value       = [for o in data.snyk_orgs.in_group.orgs : o.id]
+  value       = [for o in data.snyk_orgs.orgs_in_group.orgs : o.id]
   description = "Organization UUIDs under the group"
 }
 
+output "org_roles_in_group" {
+  value       = data.snyk_roles.org_roles_in_group.roles
+  description = "Org Roles in the group; use public_id for org_role_id in snyk_org_membership"
+}
+
 output "role_public_ids" {
-  value       = [for r in data.snyk_roles.in_group.roles : r.public_id]
+  value       = [for r in data.snyk_roles.org_roles_in_group.roles : r.public_id]
   description = "Role UUIDs (public_id) available when assigning memberships"
 }
