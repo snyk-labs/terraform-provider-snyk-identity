@@ -1,0 +1,8 @@
+# Example terraform.tfvars file
+# Copy this to terraform.tfvars and fill in your values
+
+# Authentication - use a Snyk service account API token or PAT (group admin role)
+api_token = "your-snyk-api-token"
+api_endpoint = "api.snyk.io"
+
+group_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"

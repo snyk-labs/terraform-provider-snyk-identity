@@ -2,23 +2,59 @@
 
 Terraform provider for managing Snyk organization and group memberships, plus read-only data sources for groups, orgs, roles, and SSO connection details. It uses the Snyk REST API (default version `2025-11-05` where applicable).
 
-## Provider configuration
+## Features
 
-Declare the provider and pass a Snyk API token. Optional `api_endpoint` sets the API host (for example `api.snyk.io`); if you omit a scheme, `https://` is prepended. When unset, the client uses `https://api.snyk.io`.
+This provider is primarily used to automate Snyk users access provisioning after [Configure Self-Serve Single Sign-On (SSO)](https://docs.snyk.io/snyk-platform-administration/single-sign-on-sso-for-authentication-to-snyk/configure-self-serve-single-sign-on-sso) through following functions.
+
+- *Group Membership*: Create and manage Snyk user group membership
+- *Org Membership*: Create and manage Snyk user org membership
+- *Group*: Get Group details
+- *Orgs*: List organizations of a Group
+- *Roles*: List Snyk organization Roles of a Group
+- *Connections*: List SSO connection and SSO connection users
+
+## Requirements
+
+- [Terraform](https://www.terraform.io/downloads.html) >= 1.0
+- [Go](https://golang.org/doc/install) >= 1.24+ (for building from source)
+- Snyk API Token with Group Admin access
+
+### Build from Source
+
+```bash
+# Clone the repository
+git clone https://github.com/snyk-labs/terraform-provider-snyk-identity.git
+cd terraform-provider-snyk-identity
+
+# Build and install locally
+make build
+```
+Place the binary in your [Terraform plugin directory](https://developer.hashicorp.com/terraform/plugin/how-terraform-works#plugin-locations) or use a [development override](https://developer.hashicorp.com/terraform/plugin/development#development-overrides).
+
+## Installation
+
+### From Terraform Registry
 
 ```hcl
 terraform {
   required_providers {
     snyk = {
       source  = "snyk-labs/snyk-identity"
-      version = "0.1.0"
+      version = "~> 0.1"
     }
   }
 }
+```
 
+## Provider configuration
+
+Declare the provider and pass a Snyk API token. Optional `api_endpoint` sets the API host (for example `api.snyk.io`); if you omit a scheme, `https://` is prepended. When unset, the client uses `https://api.snyk.io`.
+
+```hcl
 provider "snyk" {
   api_token = var.api_token
-  # api_endpoint = "api.snyk.io" # optional; becomes https://api.snyk.io
+  # optional Snyk API endpoint variable
+  # api_endpoint = "api.snyk.io"
 }
 ```
 
@@ -38,7 +74,7 @@ Grant the token the scopes your configuration needs (for example `org.membership
 | `snyk_group` | Reads a group by ID (attributes such as name when returned by the API). |
 | `snyk_orgs` | Lists organizations in a group. |
 | `snyk_org_memberships` | Lists all memberships of an organization (user and org role per membership). |
-| `snyk_roles` | Lists organization roles for a group (Snyk v1 roles API). |
+| `snyk_roles` | Lists organization roles for a group. |
 | `snyk_sso_connections` | Lists SSO connections configured for a group. |
 | `snyk_sso_connection_users` | Lists users for a given SSO connection in a group. |
 | `snyk_group_memberships` | Lists all memberships of a group (user and role per membership). |
@@ -78,11 +114,3 @@ terraform import snyk_group_membership.member "b667f176-df52-4b0a-9954-117af6b05
 ```
 
 Imported state sets `cascade_delete` to `false`; adjust in configuration if you need a different value on delete.
-
-## Building and installing
-
-```bash
-go build -o terraform-provider-snyk-identity .
-```
-
-Place the binary in your [Terraform plugin directory](https://developer.hashicorp.com/terraform/plugin/how-terraform-works#plugin-locations) or use a [development override](https://developer.hashicorp.com/terraform/plugin/development#development-overrides).
